@@ -1,0 +1,31 @@
+gradlew.bat
+  s_69429d3eaa182d::t_5d8824e4140d70 1-94
+scripts/resolve-play-release.sh
+  s_69429d3eaa182d::t_77d69c4a6a6ca3 1-111
+app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+  s_69429d3eaa182d::t_1fc2c005dcc7c5 1-5
+gradle/wrapper/gradle-wrapper.properties
+  s_69429d3eaa182d::t_8013d177530f6a 1-7
+local.properties.example
+  s_69429d3eaa182d::t_fb010bee15dd23 1
+gradlew
+  s_69429d3eaa182d::t_788b9b5f6de0b3 1-251
+build.gradle
+  s_69429d3eaa182d::t_1e1493137dd975 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ac5a53acc48631499c9edebff06b6b9fc07117e9",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
