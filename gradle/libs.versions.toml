@@ -1,0 +1,7 @@
+[versions]
+androidGradlePlugin = "8.13.2"
+gradlePlayPublisher = "3.13.0"
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+play-publisher = { id = "com.github.triplet.play", version.ref = "gradlePlayPublisher" }

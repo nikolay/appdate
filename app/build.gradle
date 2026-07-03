@@ -1,6 +1,6 @@
 plugins {
-    id "com.android.application"
-    id "com.github.triplet.play"
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.play.publisher)
 }
 
 import com.github.triplet.gradle.androidpublisher.ReleaseStatus
