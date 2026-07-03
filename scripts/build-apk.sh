@@ -6,6 +6,7 @@ SDK_DIR="${ANDROID_HOME:-${HOME}/Library/Android/sdk}"
 BUILD_TOOLS="${BUILD_TOOLS:-${SDK_DIR}/build-tools/36.1.0}"
 PLATFORM="${ANDROID_PLATFORM:-${SDK_DIR}/platforms/android-36}"
 APP_DIR="${ROOT_DIR}/app"
+MANIFEST="${ROOT_DIR}/scripts/manual/AndroidManifest.xml"
 BUILD_DIR="${ROOT_DIR}/build/manual"
 OUT_DIR="${ROOT_DIR}/build/outputs/apk"
 KEYSTORE="${ROOT_DIR}/build/debug.keystore"
@@ -23,12 +24,13 @@ for tool in "$AAPT2" "$D8" "$ZIPALIGN" "$APKSIGNER" "$ANDROID_JAR"; do
   fi
 done
 
+if [[ ! -f "$MANIFEST" ]]; then
+  echo "Missing manual build manifest: $MANIFEST" >&2
+  exit 1
+fi
+
 rm -rf "$BUILD_DIR" "$OUT_DIR"
 mkdir -p "$BUILD_DIR/compiled" "$BUILD_DIR/gen" "$BUILD_DIR/classes" "$BUILD_DIR/dex" "$BUILD_DIR/apk" "$OUT_DIR"
-
-MANIFEST="$BUILD_DIR/AndroidManifest.xml"
-perl -0pe 's/(<manifest\b[^>]*?)>/$1 package="com.nikolay.appdate">/s' \
-  "$APP_DIR/src/main/AndroidManifest.xml" > "$MANIFEST"
 
 "$AAPT2" compile --dir "$APP_DIR/src/main/res" -o "$BUILD_DIR/compiled/resources.zip"
 

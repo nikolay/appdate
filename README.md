@@ -8,6 +8,7 @@ Android does not allow an ordinary third-party app to silently update, uninstall
 
 - `app/` - native Android app source, written in Java with no external runtime dependencies.
 - `scripts/build-apk.sh` - offline-friendly APK builder using the installed Android SDK tools.
+- `scripts/manual/AndroidManifest.xml` - manifest used only by the manual APK builder because `aapt2` requires a `package` attribute.
 - `scripts/resolve-play-release.sh` - SemVer-to-Play-track resolver used by GitHub Actions.
 - `site/` - static GitHub Pages-ready website for `https://droidappdate.com`.
 - `site/updates/catalog.json` - local static update catalog shape for future hosting.
