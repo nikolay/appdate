@@ -1,0 +1,122 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer version or tag, for example v1.2.3 or v1.2.3-beta.1"
+        required: true
+        type: string
+      track:
+        description: "Play track. Use auto to derive from SemVer."
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - internal
+          - alpha
+          - beta
+          - production
+      release_status:
+        description: "Google Play release status"
+        required: true
+        default: "completed"
+        type: choice
+        options:
+          - completed
+          - draft
+          - inProgress
+          - halted
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+
+    env:
+      APPDATE_RELEASE_STORE_FILE: ${{ github.workspace }}/appdate-upload.jks
+      APPDATE_RELEASE_STORE_PASSWORD: ${{ secrets.APPDATE_RELEASE_STORE_PASSWORD }}
+      APPDATE_RELEASE_KEY_ALIAS: ${{ secrets.APPDATE_RELEASE_KEY_ALIAS }}
+      APPDATE_RELEASE_KEY_PASSWORD: ${{ secrets.APPDATE_RELEASE_KEY_PASSWORD }}
+      ANDROID_PUBLISHER_CREDENTIALS: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve release target
+        id: release
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME}"
+          track="${{ github.event.inputs.track }}"
+          release_status="${{ github.event.inputs.release_status }}"
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            version="${{ github.event.inputs.version }}"
+          fi
+
+          ./scripts/resolve-play-release.sh \
+            "$version" \
+            "${track:-auto}" \
+            "${release_status:-completed}"
+
+      - name: Validate release secrets
+        shell: bash
+        env:
+          APPDATE_UPLOAD_KEYSTORE_BASE64: ${{ secrets.APPDATE_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          missing=()
+          for name in \
+            APPDATE_UPLOAD_KEYSTORE_BASE64 \
+            APPDATE_RELEASE_STORE_PASSWORD \
+            APPDATE_RELEASE_KEY_ALIAS \
+            APPDATE_RELEASE_KEY_PASSWORD \
+            ANDROID_PUBLISHER_CREDENTIALS
+          do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("$name")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing required GitHub secret(s):\n' >&2
+            printf '  %s\n' "${missing[@]}" >&2
+            exit 2
+          fi
+
+      - name: Decode upload keystore
+        shell: bash
+        env:
+          APPDATE_UPLOAD_KEYSTORE_BASE64: ${{ secrets.APPDATE_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$APPDATE_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$APPDATE_RELEASE_STORE_FILE"
+
+      - name: Build release bundle
+        run: ./gradlew :app:lintRelease :app:bundleRelease
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appdate-${{ env.APPDATE_VERSION_NAME }}-${{ env.PLAY_TRACK }}.aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Publish to Google Play
+        run: ./gradlew :app:publishBundle

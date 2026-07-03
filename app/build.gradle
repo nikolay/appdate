@@ -1,0 +1,79 @@
+plugins {
+    id "com.android.application"
+    id "com.github.triplet.play"
+}
+
+import com.github.triplet.gradle.androidpublisher.ReleaseStatus
+
+def releaseStoreFile = findProperty("APPDATE_RELEASE_STORE_FILE") ?: System.getenv("APPDATE_RELEASE_STORE_FILE")
+def releaseStorePassword = findProperty("APPDATE_RELEASE_STORE_PASSWORD") ?: System.getenv("APPDATE_RELEASE_STORE_PASSWORD")
+def releaseKeyAlias = findProperty("APPDATE_RELEASE_KEY_ALIAS") ?: System.getenv("APPDATE_RELEASE_KEY_ALIAS")
+def releaseKeyPassword = findProperty("APPDATE_RELEASE_KEY_PASSWORD") ?: System.getenv("APPDATE_RELEASE_KEY_PASSWORD")
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+def appVersionCode = ((findProperty("APPDATE_VERSION_CODE") ?: System.getenv("APPDATE_VERSION_CODE") ?: "1") as String).toInteger()
+def appVersionName = (findProperty("APPDATE_VERSION_NAME") ?: System.getenv("APPDATE_VERSION_NAME") ?: "0.1.0") as String
+def playTrackName = (findProperty("PLAY_TRACK") ?: System.getenv("PLAY_TRACK") ?: "internal") as String
+def playReleaseStatusName = ((findProperty("PLAY_RELEASE_STATUS") ?: System.getenv("PLAY_RELEASE_STATUS") ?: "completed") as String).toLowerCase()
+def playReleaseStatuses = [
+    "completed": ReleaseStatus.COMPLETED,
+    "draft": ReleaseStatus.DRAFT,
+    "halted": ReleaseStatus.HALTED,
+    "inprogress": ReleaseStatus.IN_PROGRESS,
+    "in_progress": ReleaseStatus.IN_PROGRESS
+]
+
+if (!playReleaseStatuses.containsKey(playReleaseStatusName)) {
+    throw new GradleException("Unsupported PLAY_RELEASE_STATUS '${playReleaseStatusName}'. Use completed, draft, halted, or inProgress.")
+}
+
+android {
+    namespace = "com.nikolay.appdate"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.nikolay.appdate"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = appVersionCode
+        versionName = appVersionName
+    }
+
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+
+        release {
+            minifyEnabled = false
+            shrinkResources = false
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            }
+        }
+    }
+}
+
+play {
+    track.set(playTrackName)
+    releaseStatus.set(playReleaseStatuses[playReleaseStatusName])
+    defaultToAppBundles.set(true)
+}
+
+tasks.register("printPlayBundlePath") {
+    dependsOn("bundleRelease")
+    doLast {
+        println("Play upload bundle: ${layout.buildDirectory.file("outputs/bundle/release/app-release.aab").get().asFile}")
+    }
+}

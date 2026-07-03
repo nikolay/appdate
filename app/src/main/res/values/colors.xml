@@ -1,0 +1,15 @@
+<resources>
+    <color name="app_bg">#F6F8F7</color>
+    <color name="app_primary">#1D6B4F</color>
+    <color name="app_primary_on">#FFFFFF</color>
+    <color name="app_header_bg">#154C39</color>
+    <color name="app_header_title">#FFFFFF</color>
+    <color name="app_header_subtitle">#E5F4EE</color>
+    <color name="app_surface">#FFFFFF</color>
+    <color name="app_surface_subtle">#ECF0EE</color>
+    <color name="app_text">#1D2220</color>
+    <color name="app_muted">#636E69</color>
+    <color name="app_amber">#B87018</color>
+    <color name="app_status_bar">#154C39</color>
+    <color name="app_nav_bar">#FFFFFF</color>
+</resources>

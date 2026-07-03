@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Appdate</string>
+    <string name="home_subtitle">Disabled apps, update checks, and uninstall actions in one quiet place.</string>
+    <string name="catalog_hint">Known updates come from the local update catalog. Apps outside it can still be checked in Play Store or Galaxy Store.</string>
+    <string name="empty_disabled_apps">No disabled apps found.</string>
+</resources>
