@@ -1,0 +1,23 @@
+scripts/build-apk.sh
+  s_69429d3eaa182d::t_15c1f962282cc7 9,27-31
+README.md
+  s_69429d3eaa182d::t_0026b0bc0f5b61 11
+scripts/manual/AndroidManifest.xml
+  s_69429d3eaa182d::t_15c1f962282cc7 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "94f11845dc147f27c85e9ea57cdbe4f6c3aa6e34",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
