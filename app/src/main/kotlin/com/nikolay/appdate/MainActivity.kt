@@ -148,19 +148,11 @@ private fun AppdateScreen() {
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Appdate",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = if (isScanning) "Scanning disabled apps" else "${apps.size} disabled apps",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1
-                        )
-                    }
+                    Text(
+                        text = "Appdate",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 },
                 actions = {
                     IconButton(
@@ -405,7 +397,7 @@ private fun DisabledAppCard(
                     )
                 } else {
                     Text(
-                        text = "No Play/Galaxy store",
+                        text = "No store action",
                         modifier = Modifier.weight(1.35f),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -555,7 +547,8 @@ private suspend fun scanDisabledApps(context: Context): ScanResult = withContext
     val pm = context.packageManager
     val availability = StoreAvailability(
         playStore = pm.isPackageLaunchable(PLAY_PACKAGE),
-        galaxyStore = pm.isPackageLaunchable(GALAXY_PACKAGE)
+        galaxyStore = pm.isPackageLaunchable(GALAXY_PACKAGE),
+        fDroid = pm.isPackageVisible(FDROID_PACKAGE)
     )
 
     val apps = pm.getInstalledApplicationsCompat(PackageManager.MATCH_DISABLED_COMPONENTS)
@@ -630,6 +623,10 @@ private fun PackageManager.isPackageLaunchable(packageName: String): Boolean {
         PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED -> false
         else -> appInfo.enabled
     }
+}
+
+private fun PackageManager.isPackageVisible(packageName: String): Boolean {
+    return getApplicationInfoCompat(packageName, PackageManager.MATCH_DISABLED_COMPONENTS) != null
 }
 
 private fun PackageManager.isDisabled(appInfo: ApplicationInfo): Boolean {
@@ -743,6 +740,7 @@ private fun Context.openStore(store: StoreKind, packageName: String) {
     when (store) {
         StoreKind.Play -> openPlayStore(packageName)
         StoreKind.Galaxy -> openGalaxyStore(packageName)
+        StoreKind.FDroid -> openFDroid(packageName)
     }
 }
 
@@ -770,6 +768,16 @@ private fun Context.openGalaxyStore(packageName: String) {
         if (!startSafely(webIntent)) {
             Toast.makeText(this, "Galaxy Store is not available.", Toast.LENGTH_SHORT).show()
         }
+    }
+}
+
+private fun Context.openFDroid(packageName: String) {
+    val marketIntent = Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse("market://details?id=$packageName")
+    ).setPackage(FDROID_PACKAGE)
+    if (!startSafely(marketIntent)) {
+        startSafely(Intent(Intent.ACTION_VIEW, Uri.parse("https://f-droid.org/packages/$packageName/")))
     }
 }
 
@@ -812,12 +820,14 @@ private data class ScanResult(
 
 private data class StoreAvailability(
     val playStore: Boolean = false,
-    val galaxyStore: Boolean = false
+    val galaxyStore: Boolean = false,
+    val fDroid: Boolean = false
 ) {
     fun isAvailable(store: StoreKind): Boolean {
         return when (store) {
             StoreKind.Play -> playStore
             StoreKind.Galaxy -> galaxyStore
+            StoreKind.FDroid -> fDroid
         }
     }
 }
@@ -842,7 +852,7 @@ private data class DisabledApp(
 
     val sourceTone: PillTone
         get() = when (installSourcePackage) {
-            PLAY_PACKAGE, GALAXY_PACKAGE -> PillTone.Positive
+            PLAY_PACKAGE, GALAXY_PACKAGE, FDROID_PACKAGE -> PillTone.Positive
             null -> PillTone.Neutral
             else -> PillTone.Neutral
         }
@@ -862,7 +872,8 @@ private data class DisabledApp(
         val preferred = when (installSourcePackage) {
             PLAY_PACKAGE -> StoreKind.Play
             GALAXY_PACKAGE -> StoreKind.Galaxy
-            else -> null
+            FDROID_PACKAGE -> StoreKind.FDroid
+            else -> if (packageName == FDROID_PACKAGE) StoreKind.FDroid else null
         }
         return preferred?.takeIf { availability.isAvailable(it) }
     }
@@ -883,7 +894,8 @@ private data class DisabledApp(
 
 private enum class StoreKind(val buttonLabel: String) {
     Play("Play Store"),
-    Galaxy("Galaxy Store")
+    Galaxy("Galaxy Store"),
+    FDroid("F-Droid")
 }
 
 private enum class PillTone {

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Appdate is an Android utility for finding disabled apps and opening Play Store, Galaxy Store, or Android settings update flows.">
+    <meta name="description" content="Appdate is an Android utility for finding disabled apps and opening Play Store, Galaxy Store, F-Droid, or Android settings update flows.">
     <link rel="canonical" href="https://droidappdate.com/">
     <title>Appdate</title>
     <link rel="stylesheet" href="styles.css">
@@ -25,12 +25,12 @@
       <section class="hero">
         <div class="hero-copy">
           <h1>Appdate</h1>
-          <p class="lede">Find disabled Android apps and jump straight to Play Store, Galaxy Store, app info, or uninstall flows without re-enabling them first.</p>
+          <p class="lede">Find disabled Android apps and jump straight to Play Store, Galaxy Store, F-Droid, app info, or uninstall flows without re-enabling them first.</p>
           <div class="hero-actions">
             <a class="primary-action" href="downloads/appdate-debug.apk">Download local APK</a>
             <a class="secondary-action" href="#how-it-works">How it works</a>
           </div>
-          <p class="fine-print">Current local build. Store availability is checked inside Play Store or Galaxy Store.</p>
+          <p class="fine-print">Current local build. Store actions follow the source Android reports.</p>
         </div>
         <div class="hero-art">
           <img src="assets/appdate-hero.png" alt="Android phone mockup showing the Appdate disabled apps screen">
@@ -51,12 +51,12 @@
           <article>
             <span>2</span>
             <h3>Check store updates</h3>
-            <p>Opens Play Store or Galaxy Store only when Android reports that store for the app.</p>
+            <p>Opens Play Store, Galaxy Store, or F-Droid only when Android reports that source for the app.</p>
           </article>
           <article>
             <span>3</span>
             <h3>Hand off safely</h3>
-            <p>Routes to Play Store, Galaxy Store, app info, or Android’s uninstall screen.</p>
+            <p>Routes to Play Store, Galaxy Store, F-Droid, app info, or Android’s uninstall screen.</p>
           </article>
         </div>
       </section>
@@ -67,7 +67,7 @@
           <p>Android does not let ordinary apps silently update or uninstall other packages. Appdate keeps the disabled state untouched and lets the operating system or store complete sensitive actions.</p>
         </div>
         <ul>
-          <li>Checks update availability in Play Store or Galaxy Store.</li>
+          <li>Checks update availability in the reported source store.</li>
           <li>Shows every disabled package it can see.</li>
           <li>Uses Android’s own uninstall confirmation flow.</li>
           <li>Needs privileged/device-owner/root access for silent background updates.</li>
