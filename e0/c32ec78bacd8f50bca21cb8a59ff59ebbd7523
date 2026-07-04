@@ -1,0 +1,24 @@
+.github/workflows/android-release.yml
+  s_69429d3eaa182d::t_51dff233eec527 163-164,166-170
+  s_69429d3eaa182d::t_845bc307b1c53c 36,134-162,165
+README.md
+  s_69429d3eaa182d::t_845bc307b1c53c 70-71
+PLAY_STORE.md
+  s_69429d3eaa182d::t_845bc307b1c53c 64-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e0c32ec78bacd8f50bca21cb8a59ff59ebbd7523",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
