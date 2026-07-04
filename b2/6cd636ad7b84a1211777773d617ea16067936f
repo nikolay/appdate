@@ -1,0 +1,26 @@
+README.md
+  s_69429d3eaa182d::t_3327c25ed2dbd2 5,114
+site/index.html
+  s_69429d3eaa182d::t_3327c25ed2dbd2 43,54
+app/src/main/kotlin/com/nikolay/appdate/MainActivity.kt
+  s_69429d3eaa182d::t_7e2b0c868a906b 7-10,24,76,83-84,86,98,265,267-268,270-278,282-291,358,375-378,403,417,419-420,423-431,433,435-437,441,460-480,722,724-728,733-752,857-860,862-864,878,884,902-903
+  s_69429d3eaa182d::t_166a1c94e18cd7 238,870
+PLAY_STORE.md
+  s_69429d3eaa182d::t_3327c25ed2dbd2 176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b26cd636ad7b84a1211777773d617ea16067936f",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
