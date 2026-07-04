@@ -2,7 +2,7 @@
 
 appdate contains Appdate, a local-first Android utility prototype for finding disabled apps and routing them to safe update or uninstall flows.
 
-Android does not allow an ordinary third-party app to silently update, uninstall, enable, or disable other apps. Appdate therefore keeps disabled apps disabled by never changing their enabled state. It detects disabled packages with public `PackageManager` APIs, highlights packages that match a local update catalog, and opens system-owned Play Store, Galaxy Store, app-info, or uninstall screens for the user to complete.
+Android does not allow an ordinary third-party app to silently update, uninstall, enable, or disable other apps. Appdate therefore keeps disabled apps disabled by never changing their enabled state. It detects disabled packages with public `PackageManager` APIs and opens system-owned Play Store, Galaxy Store, app-info, or uninstall screens for the user to complete.
 
 ## Project layout
 
@@ -11,7 +11,6 @@ Android does not allow an ordinary third-party app to silently update, uninstall
 - `scripts/manual/AndroidManifest.xml` - manifest used only by the manual APK builder because `aapt2` requires a `package` attribute.
 - `scripts/resolve-play-release.sh` - SemVer-to-Play-track resolver used by GitHub Actions.
 - `site/` - static GitHub Pages-ready website for `https://droidappdate.com`.
-- `site/updates/catalog.json` - local static update catalog shape for future hosting.
 
 The Android application id is `com.nikolay.appdate`.
 
@@ -112,7 +111,7 @@ python3 -m http.server 8080 --directory site
 
 ## Current limitations
 
-- Appdate cannot know Google Play or Galaxy Store pending updates for every package through public Android APIs.
-- The first local version uses a static catalog file to mark known updates. Packages outside the catalog are shown with a `Check store` action.
+- Appdate cannot directly read Google Play or Galaxy Store pending-update queues for arbitrary packages through public Android APIs.
+- Store availability is checked in Play Store or Galaxy Store after Appdate opens the package’s store page.
 - Silent update while disabled requires privileged/system, device-owner, root, or ADB-level authority. This prototype intentionally avoids pretending otherwise.
 - `QUERY_ALL_PACKAGES` is included because listing disabled packages requires broad package visibility on modern Android. That permission has Play Store policy implications and must be declared/justified in Play Console.

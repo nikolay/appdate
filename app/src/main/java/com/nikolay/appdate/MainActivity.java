@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.InstallSourceInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
@@ -26,30 +27,20 @@ import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class MainActivity extends Activity {
     private LinearLayout listContainer;
     private TextView summaryText;
     private TextView emptyText;
-    private TextView catalogText;
+    private TextView storeText;
     private ProgressBar progressBar;
-    private UpdateCatalog updateCatalog;
     private int primary;
     private int primaryOn;
     private int headerBg;
@@ -66,7 +57,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         loadThemeColors();
-        updateCatalog = UpdateCatalog.fromAssets(this);
         buildUi();
         refreshDisabledApps();
     }
@@ -139,12 +129,12 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        catalogText = new TextView(this);
-        catalogText.setTextColor(mutedColor);
-        catalogText.setTextSize(13);
-        catalogText.setLineSpacing(dp(2), 1.0f);
-        catalogText.setText(getString(R.string.catalog_hint));
-        content.addView(catalogText, cardParams());
+        storeText = new TextView(this);
+        storeText.setTextColor(mutedColor);
+        storeText.setTextSize(13);
+        storeText.setLineSpacing(dp(2), 1.0f);
+        storeText.setText(getString(R.string.store_check_hint));
+        content.addView(storeText, cardParams());
 
         progressBar = new ProgressBar(this);
         progressBar.setIndeterminate(true);
@@ -182,18 +172,10 @@ public class MainActivity extends Activity {
         List<DisabledApp> apps = scanDisabledApps();
         Collections.sort(apps, new DisabledAppComparator());
 
-        int knownUpdates = 0;
-        for (DisabledApp app : apps) {
-            if (app.hasKnownUpdate()) {
-                knownUpdates++;
-            }
-        }
-
         summaryText.setText(String.format(Locale.US,
-                "%d disabled apps · %d known updates",
-                apps.size(),
-                knownUpdates));
-        catalogText.setText(updateCatalog.describe());
+                "%d disabled apps · store checks available",
+                apps.size()));
+        storeText.setText(getString(R.string.store_check_hint));
 
         emptyText.setVisibility(apps.isEmpty() ? View.VISIBLE : View.GONE);
         for (DisabledApp app : apps) {
@@ -221,7 +203,7 @@ public class MainActivity extends Activity {
                     ? packageInfo.versionName
                     : String.valueOf(installedVersion);
             long updateTime = packageInfo != null ? packageInfo.lastUpdateTime : 0;
-            CatalogEntry entry = updateCatalog.find(packageName);
+            String installSource = installSourceLine(pm, packageName);
 
             disabledApps.add(new DisabledApp(
                     label,
@@ -229,9 +211,9 @@ public class MainActivity extends Activity {
                     versionName,
                     installedVersion,
                     updateTime,
+                    installSource,
                     enabledStateName(pm, packageName),
-                    safeIcon(pm, appInfo),
-                    entry));
+                    safeIcon(pm, appInfo)));
         }
 
         return disabledApps;
@@ -319,6 +301,44 @@ public class MainActivity extends Activity {
         return packageInfo.versionCode;
     }
 
+    @SuppressWarnings("deprecation")
+    private String installSourceLine(PackageManager pm, String packageName) {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                InstallSourceInfo info = pm.getInstallSourceInfo(packageName);
+                String updateOwner = null;
+                if (Build.VERSION.SDK_INT >= 34) {
+                    updateOwner = info.getUpdateOwnerPackageName();
+                }
+                String installing = info.getInstallingPackageName();
+                if (!TextUtils.isEmpty(updateOwner)) {
+                    return "Update owner: " + friendlyStoreName(updateOwner);
+                }
+                if (!TextUtils.isEmpty(installing)) {
+                    return "Installed by: " + friendlyStoreName(installing);
+                }
+            }
+
+            String installer = pm.getInstallerPackageName(packageName);
+            if (!TextUtils.isEmpty(installer)) {
+                return "Installed by: " + friendlyStoreName(installer);
+            }
+        } catch (PackageManager.NameNotFoundException | IllegalArgumentException ignored) {
+            return null;
+        }
+        return null;
+    }
+
+    private String friendlyStoreName(String packageName) {
+        if ("com.android.vending".equals(packageName)) {
+            return "Google Play";
+        }
+        if ("com.sec.android.app.samsungapps".equals(packageName)) {
+            return "Galaxy Store";
+        }
+        return packageName;
+    }
+
     private View rowForApp(DisabledApp app) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
@@ -361,7 +381,7 @@ public class MainActivity extends Activity {
 
         TextView status = new TextView(this);
         status.setText(app.statusLine());
-        status.setTextColor(app.hasKnownUpdate() ? primary : amber);
+        status.setTextColor(primary);
         status.setTextSize(14);
         status.setTypeface(Typeface.DEFAULT_BOLD);
         LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
@@ -390,7 +410,7 @@ public class MainActivity extends Activity {
         actionsParams.topMargin = dp(12);
         row.addView(actions, actionsParams);
 
-        Button update = button(app.hasKnownUpdate() ? "Update" : "Check store");
+        Button update = button("Check update");
         update.setOnClickListener(v -> showUpdateChoices(app));
         actions.addView(update, new LinearLayout.LayoutParams(0, dp(44), 1));
 
@@ -412,8 +432,8 @@ public class MainActivity extends Activity {
         };
 
         new AlertDialog.Builder(this)
-                .setTitle(app.hasKnownUpdate() ? "Update " + app.label : "Check " + app.label)
-                .setMessage("Appdate will not enable this app. The store or Android settings screen owns the update flow.")
+                .setTitle("Check " + app.label)
+                .setMessage("Appdate keeps this app disabled. Google Play or Galaxy Store will show whether an update is available and handle the update flow.")
                 .setItems(choices, (dialog, which) -> {
                     if (which == 0) {
                         openPlayStore(app.packageName);
@@ -536,9 +556,9 @@ public class MainActivity extends Activity {
         final String versionName;
         final long installedVersion;
         final long lastUpdatedAt;
+        final String installSource;
         final String enabledState;
         final Drawable icon;
-        final CatalogEntry catalogEntry;
 
         DisabledApp(
                 String label,
@@ -546,28 +566,21 @@ public class MainActivity extends Activity {
                 String versionName,
                 long installedVersion,
                 long lastUpdatedAt,
+                String installSource,
                 String enabledState,
-                Drawable icon,
-                CatalogEntry catalogEntry) {
+                Drawable icon) {
             this.label = label;
             this.packageName = packageName;
             this.versionName = versionName;
             this.installedVersion = installedVersion;
             this.lastUpdatedAt = lastUpdatedAt;
+            this.installSource = installSource;
             this.enabledState = enabledState;
             this.icon = icon;
-            this.catalogEntry = catalogEntry;
-        }
-
-        boolean hasKnownUpdate() {
-            return catalogEntry != null && catalogEntry.latestVersionCode > installedVersion;
         }
 
         String statusLine() {
-            if (hasKnownUpdate()) {
-                return "Known update available";
-            }
-            return "Disabled · store check needed";
+            return "Disabled · check Play or Galaxy Store";
         }
 
         String detailLine() {
@@ -579,12 +592,9 @@ public class MainActivity extends Activity {
                     .append(installedVersion)
                     .append(")");
 
-            if (catalogEntry != null) {
-                builder.append(" · Catalog ")
-                        .append(catalogEntry.latestVersionName)
-                        .append(" (")
-                        .append(catalogEntry.latestVersionCode)
-                        .append(")");
+            if (!TextUtils.isEmpty(installSource)) {
+                builder.append(" · ")
+                        .append(installSource);
             }
 
             if (lastUpdatedAt > 0) {
@@ -599,84 +609,7 @@ public class MainActivity extends Activity {
     private static final class DisabledAppComparator implements Comparator<DisabledApp> {
         @Override
         public int compare(DisabledApp left, DisabledApp right) {
-            if (left.hasKnownUpdate() != right.hasKnownUpdate()) {
-                return left.hasKnownUpdate() ? -1 : 1;
-            }
             return left.label.compareToIgnoreCase(right.label);
-        }
-    }
-
-    private static final class CatalogEntry {
-        final String packageName;
-        final long latestVersionCode;
-        final String latestVersionName;
-
-        CatalogEntry(String packageName, long latestVersionCode, String latestVersionName) {
-            this.packageName = packageName;
-            this.latestVersionCode = latestVersionCode;
-            this.latestVersionName = latestVersionName == null || latestVersionName.trim().isEmpty()
-                    ? String.valueOf(latestVersionCode)
-                    : latestVersionName;
-        }
-    }
-
-    private static final class UpdateCatalog {
-        final String updatedAt;
-        final Map<String, CatalogEntry> packages;
-
-        UpdateCatalog(String updatedAt, Map<String, CatalogEntry> packages) {
-            this.updatedAt = updatedAt;
-            this.packages = packages;
-        }
-
-        static UpdateCatalog fromAssets(Activity activity) {
-            Map<String, CatalogEntry> entries = new HashMap<>();
-            String updatedAt = "local";
-
-            try (InputStream input = activity.getAssets().open("update-catalog.json");
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                StringBuilder json = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    json.append(line);
-                }
-
-                JSONObject root = new JSONObject(json.toString());
-                updatedAt = root.optString("updatedAt", updatedAt);
-                JSONArray packages = root.optJSONArray("packages");
-                if (packages != null) {
-                    for (int i = 0; i < packages.length(); i++) {
-                        JSONObject item = packages.optJSONObject(i);
-                        if (item == null) {
-                            continue;
-                        }
-                        String packageName = item.optString("packageName", "").trim();
-                        long latestVersionCode = item.optLong("latestVersionCode", 0);
-                        String latestVersionName = item.optString("latestVersionName", String.valueOf(latestVersionCode));
-                        if (!packageName.isEmpty() && latestVersionCode > 0) {
-                            entries.put(packageName, new CatalogEntry(packageName, latestVersionCode, latestVersionName));
-                        }
-                    }
-                }
-            } catch (Exception ignored) {
-                return new UpdateCatalog("unavailable", entries);
-            }
-
-            return new UpdateCatalog(updatedAt, entries);
-        }
-
-        CatalogEntry find(String packageName) {
-            return packages.get(packageName);
-        }
-
-        String describe() {
-            if (packages.isEmpty()) {
-                return "Local update catalog is empty. Appdate can still list disabled apps and route each one to store or uninstall flows.";
-            }
-            return String.format(Locale.US,
-                    "Local update catalog: %d package records, updated %s. Apps outside the catalog can still be checked in the stores.",
-                    packages.size(),
-                    updatedAt);
         }
     }
 }

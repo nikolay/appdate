@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Appdate is a local-first Android utility for finding disabled apps and routing them to update or uninstall flows.">
+    <meta name="description" content="Appdate is an Android utility for finding disabled apps and opening Play Store, Galaxy Store, or Android settings update flows.">
     <link rel="canonical" href="https://droidappdate.com/">
     <title>Appdate</title>
     <link rel="stylesheet" href="styles.css">
@@ -25,12 +25,12 @@
       <section class="hero">
         <div class="hero-copy">
           <h1>Appdate</h1>
-          <p class="lede">Find disabled Android apps, check whether Appdate knows about updates, and jump straight to store or uninstall flows without re-enabling them first.</p>
+          <p class="lede">Find disabled Android apps and jump straight to Play Store, Galaxy Store, app info, or uninstall flows without re-enabling them first.</p>
           <div class="hero-actions">
             <a class="primary-action" href="downloads/appdate-debug.apk">Download local APK</a>
-            <a class="secondary-action" href="updates/catalog.json">View catalog</a>
+            <a class="secondary-action" href="#how-it-works">How it works</a>
           </div>
-          <p class="fine-print">Current local build. Future releases can host the update catalog on this GitHub Pages site.</p>
+          <p class="fine-print">Current local build. Store availability is checked inside Play Store or Galaxy Store.</p>
         </div>
         <div class="hero-art">
           <img src="assets/appdate-hero.png" alt="Android phone mockup showing the Appdate disabled apps screen">
@@ -40,7 +40,7 @@
       <section id="how-it-works" class="band">
         <div class="section-heading">
           <h2>Built around Android’s actual boundaries</h2>
-          <p>Appdate lists disabled packages locally, compares them with a static update catalog, and opens system-owned destinations for update or removal.</p>
+          <p>Appdate lists disabled packages locally, then opens system-owned destinations where Play Store, Galaxy Store, or Android settings can complete update or removal actions.</p>
         </div>
         <div class="steps">
           <article>
@@ -50,8 +50,8 @@
           </article>
           <article>
             <span>2</span>
-            <h3>Match known updates</h3>
-            <p>Compares installed version codes against a local JSON catalog that can later be hosted here.</p>
+            <h3>Check store updates</h3>
+            <p>Opens the app’s Play Store or Galaxy Store page so the store can show whether an update is available.</p>
           </article>
           <article>
             <span>3</span>
@@ -67,10 +67,10 @@
           <p>Android does not let ordinary apps silently update or uninstall other packages. Appdate keeps the disabled state untouched and lets the operating system or store complete sensitive actions.</p>
         </div>
         <ul>
-          <li>Works locally with a bundled static catalog.</li>
+          <li>Checks update availability in Play Store or Galaxy Store.</li>
           <li>Shows every disabled package it can see.</li>
           <li>Uses explicit user confirmation for uninstall flows.</li>
-          <li>Needs privileged/device-owner/root access for silent updates.</li>
+          <li>Needs privileged/device-owner/root access for silent background updates.</li>
         </ul>
       </section>
     </main>
