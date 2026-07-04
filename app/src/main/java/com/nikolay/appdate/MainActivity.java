@@ -14,11 +14,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -40,7 +43,9 @@ public class MainActivity extends Activity {
     private TextView summaryText;
     private TextView emptyText;
     private TextView storeText;
+    private EditText filterInput;
     private ProgressBar progressBar;
+    private final List<DisabledApp> allDisabledApps = new ArrayList<>();
     private int primary;
     private int primaryOn;
     private int headerBg;
@@ -136,6 +141,32 @@ public class MainActivity extends Activity {
         storeText.setText(getString(R.string.store_check_hint));
         content.addView(storeText, cardParams());
 
+        filterInput = new EditText(this);
+        filterInput.setSingleLine(true);
+        filterInput.setHint("Filter by app or package");
+        filterInput.setTextColor(textColor);
+        filterInput.setHintTextColor(mutedColor);
+        filterInput.setTextSize(15);
+        filterInput.setPadding(dp(14), 0, dp(14), 0);
+        filterInput.setBackgroundColor(surfaceColor);
+        filterInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // No work needed.
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                renderDisabledApps();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // No work needed.
+            }
+        });
+        content.addView(filterInput, cardParams());
+
         progressBar = new ProgressBar(this);
         progressBar.setIndeterminate(true);
         progressBar.setVisibility(View.GONE);
@@ -171,18 +202,50 @@ public class MainActivity extends Activity {
 
         List<DisabledApp> apps = scanDisabledApps();
         Collections.sort(apps, new DisabledAppComparator());
+        allDisabledApps.clear();
+        allDisabledApps.addAll(apps);
 
-        summaryText.setText(String.format(Locale.US,
-                "%d disabled apps · store checks available",
-                apps.size()));
         storeText.setText(getString(R.string.store_check_hint));
-
-        emptyText.setVisibility(apps.isEmpty() ? View.VISIBLE : View.GONE);
-        for (DisabledApp app : apps) {
-            listContainer.addView(rowForApp(app), cardParams());
-        }
+        renderDisabledApps();
 
         progressBar.setVisibility(View.GONE);
+    }
+
+    private void renderDisabledApps() {
+        if (listContainer == null || emptyText == null || summaryText == null) {
+            return;
+        }
+
+        listContainer.removeAllViews();
+
+        String query = filterInput != null
+                ? filterInput.getText().toString().trim().toLowerCase(Locale.US)
+                : "";
+        List<DisabledApp> visibleApps = new ArrayList<>();
+        for (DisabledApp app : allDisabledApps) {
+            if (app.matches(query)) {
+                visibleApps.add(app);
+            }
+        }
+
+        if (TextUtils.isEmpty(query)) {
+            summaryText.setText(String.format(Locale.US,
+                    "%d disabled apps · open store or uninstall",
+                    allDisabledApps.size()));
+        } else {
+            summaryText.setText(String.format(Locale.US,
+                    "%d of %d disabled apps",
+                    visibleApps.size(),
+                    allDisabledApps.size()));
+        }
+
+        emptyText.setText(allDisabledApps.isEmpty()
+                ? getString(R.string.empty_disabled_apps)
+                : "No disabled apps match the filter.");
+        emptyText.setVisibility(visibleApps.isEmpty() ? View.VISIBLE : View.GONE);
+        for (DisabledApp app : visibleApps) {
+            listContainer.addView(rowForApp(app), cardParams());
+        }
     }
 
     private List<DisabledApp> scanDisabledApps() {
@@ -203,7 +266,7 @@ public class MainActivity extends Activity {
                     ? packageInfo.versionName
                     : String.valueOf(installedVersion);
             long updateTime = packageInfo != null ? packageInfo.lastUpdateTime : 0;
-            String installSource = installSourceLine(pm, packageName);
+            AppInstallSource installSource = installSourceFor(pm, packageName);
 
             disabledApps.add(new DisabledApp(
                     label,
@@ -211,7 +274,8 @@ public class MainActivity extends Activity {
                     versionName,
                     installedVersion,
                     updateTime,
-                    installSource,
+                    installSource.displayLine,
+                    installSource.packageName,
                     enabledStateName(pm, packageName),
                     safeIcon(pm, appInfo)));
         }
@@ -302,7 +366,7 @@ public class MainActivity extends Activity {
     }
 
     @SuppressWarnings("deprecation")
-    private String installSourceLine(PackageManager pm, String packageName) {
+    private AppInstallSource installSourceFor(PackageManager pm, String packageName) {
         try {
             if (Build.VERSION.SDK_INT >= 30) {
                 InstallSourceInfo info = pm.getInstallSourceInfo(packageName);
@@ -312,21 +376,27 @@ public class MainActivity extends Activity {
                 }
                 String installing = info.getInstallingPackageName();
                 if (!TextUtils.isEmpty(updateOwner)) {
-                    return "Update owner: " + friendlyStoreName(updateOwner);
+                    return new AppInstallSource(
+                            "Update owner: " + friendlyStoreName(updateOwner),
+                            updateOwner);
                 }
                 if (!TextUtils.isEmpty(installing)) {
-                    return "Installed by: " + friendlyStoreName(installing);
+                    return new AppInstallSource(
+                            "Installed by: " + friendlyStoreName(installing),
+                            installing);
                 }
             }
 
             String installer = pm.getInstallerPackageName(packageName);
             if (!TextUtils.isEmpty(installer)) {
-                return "Installed by: " + friendlyStoreName(installer);
+                return new AppInstallSource(
+                        "Installed by: " + friendlyStoreName(installer),
+                        installer);
             }
         } catch (PackageManager.NameNotFoundException | IllegalArgumentException ignored) {
-            return null;
+            return AppInstallSource.unknown();
         }
-        return null;
+        return AppInstallSource.unknown();
     }
 
     private String friendlyStoreName(String packageName) {
@@ -401,6 +471,41 @@ public class MainActivity extends Activity {
         detailParams.topMargin = dp(4);
         row.addView(details, detailParams);
 
+        LinearLayout storeActions = actionRow();
+        row.addView(storeActions);
+
+        Button playStore = app.prefersGalaxyStore()
+                ? secondaryButton("Google Play")
+                : button("Google Play");
+        playStore.setOnClickListener(v -> openPlayStore(app));
+        storeActions.addView(playStore, new LinearLayout.LayoutParams(0, dp(44), 1));
+
+        storeActions.addView(actionSpacer());
+
+        Button galaxyStore = app.prefersGalaxyStore()
+                ? button("Galaxy Store")
+                : secondaryButton("Galaxy Store");
+        galaxyStore.setOnClickListener(v -> openGalaxyStore(app));
+        storeActions.addView(galaxyStore, new LinearLayout.LayoutParams(0, dp(44), 1));
+
+        LinearLayout systemActions = actionRow();
+        systemActions.setPadding(0, dp(8), 0, 0);
+        row.addView(systemActions);
+
+        Button appInfo = secondaryButton("App info");
+        appInfo.setOnClickListener(v -> openAppInfo(app.packageName));
+        systemActions.addView(appInfo, new LinearLayout.LayoutParams(0, dp(44), 1));
+
+        systemActions.addView(actionSpacer());
+
+        Button uninstall = warningButton("Uninstall");
+        uninstall.setOnClickListener(v -> confirmUninstall(app));
+        systemActions.addView(uninstall, new LinearLayout.LayoutParams(0, dp(44), 1));
+
+        return row;
+    }
+
+    private LinearLayout actionRow() {
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
         actions.setGravity(Gravity.CENTER_VERTICAL);
@@ -408,77 +513,69 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         actionsParams.topMargin = dp(12);
-        row.addView(actions, actionsParams);
-
-        Button update = button("Check update");
-        update.setOnClickListener(v -> showUpdateChoices(app));
-        actions.addView(update, new LinearLayout.LayoutParams(0, dp(44), 1));
-
-        Space spacer = new Space(this);
-        actions.addView(spacer, new LinearLayout.LayoutParams(dp(8), 1));
-
-        Button uninstall = secondaryButton("Uninstall");
-        uninstall.setOnClickListener(v -> confirmUninstall(app));
-        actions.addView(uninstall, new LinearLayout.LayoutParams(0, dp(44), 1));
-
-        return row;
+        actions.setLayoutParams(actionsParams);
+        return actions;
     }
 
-    private void showUpdateChoices(DisabledApp app) {
-        String[] choices = new String[] {
-                "Open Google Play",
-                "Open Galaxy Store",
-                "Open app info"
-        };
-
-        new AlertDialog.Builder(this)
-                .setTitle("Check " + app.label)
-                .setMessage("Appdate keeps this app disabled. Google Play or Galaxy Store will show whether an update is available and handle the update flow.")
-                .setItems(choices, (dialog, which) -> {
-                    if (which == 0) {
-                        openPlayStore(app.packageName);
-                    } else if (which == 1) {
-                        openGalaxyStore(app.packageName);
-                    } else {
-                        openAppInfo(app.packageName);
-                    }
-                })
-                .show();
+    private Space actionSpacer() {
+        Space spacer = new Space(this);
+        spacer.setLayoutParams(new LinearLayout.LayoutParams(dp(8), 1));
+        return spacer;
     }
 
     private void confirmUninstall(DisabledApp app) {
         new AlertDialog.Builder(this)
-                .setTitle("Uninstall " + app.label + "?")
-                .setMessage("Android will ask for confirmation. System apps may only allow uninstalling updates or opening app info.")
-                .setPositiveButton("Continue", (dialog, which) -> openUninstall(app.packageName))
+                .setTitle("Open Android uninstall?")
+                .setMessage("Continue only opens Android's uninstall screen for " + app.label
+                        + " (" + app.packageName + "). Nothing is removed unless you confirm on that Android screen. System apps may only allow app info or uninstalling updates.")
+                .setPositiveButton("Open Android screen", (dialog, which) -> openUninstall(app.packageName))
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
+    private void openPlayStore(DisabledApp app) {
+        Toast.makeText(this, "Opening Google Play for " + app.label, Toast.LENGTH_SHORT).show();
+        openPlayStore(app.packageName);
+    }
+
     private void openPlayStore(String packageName) {
-        Intent market = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + packageName));
+        Uri playUri = Uri.parse("https://play.google.com/store/apps/details")
+                .buildUpon()
+                .appendQueryParameter("id", packageName)
+                .build();
+        Intent market = new Intent(Intent.ACTION_VIEW, playUri);
         market.setPackage("com.android.vending");
         if (!startSafely(market)) {
-            openUri("https://play.google.com/store/apps/details?id=" + packageName);
+            openUri(playUri.toString());
         }
+    }
+
+    private void openGalaxyStore(DisabledApp app) {
+        Toast.makeText(this, "Opening Galaxy Store for " + app.label, Toast.LENGTH_SHORT).show();
+        openGalaxyStore(app.packageName);
     }
 
     private void openGalaxyStore(String packageName) {
         Intent galaxy = new Intent(Intent.ACTION_VIEW, Uri.parse("samsungapps://ProductDetail/" + packageName));
         galaxy.setPackage("com.sec.android.app.samsungapps");
         if (!startSafely(galaxy)) {
-            Toast.makeText(this, "Galaxy Store is not available on this device.", Toast.LENGTH_SHORT).show();
+            if (!openUri("https://galaxystore.samsung.com/detail/" + packageName)) {
+                Toast.makeText(this, "Galaxy Store is not available on this device.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
     private void openAppInfo(String packageName) {
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.parse("package:" + packageName));
-        startSafely(intent);
+        if (!startSafely(intent)) {
+            Toast.makeText(this, "Android could not open app info.", Toast.LENGTH_SHORT).show();
+        }
     }
 
+    @SuppressWarnings("deprecation")
     private void openUninstall(String packageName) {
-        Intent intent = new Intent(Intent.ACTION_DELETE);
+        Intent intent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
         intent.setData(Uri.parse("package:" + packageName));
         intent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
         if (!startSafely(intent)) {
@@ -486,8 +583,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void openUri(String uri) {
-        startSafely(new Intent(Intent.ACTION_VIEW, Uri.parse(uri)));
+    private boolean openUri(String uri) {
+        return startSafely(new Intent(Intent.ACTION_VIEW, Uri.parse(uri)));
     }
 
     private boolean startSafely(Intent intent) {
@@ -517,6 +614,12 @@ public class MainActivity extends Activity {
         Button button = button(text);
         button.setTextColor(textColor);
         button.setBackgroundColor(subtleSurfaceColor);
+        return button;
+    }
+
+    private Button warningButton(String text) {
+        Button button = secondaryButton(text);
+        button.setTextColor(amber);
         return button;
     }
 
@@ -557,6 +660,7 @@ public class MainActivity extends Activity {
         final long installedVersion;
         final long lastUpdatedAt;
         final String installSource;
+        final String installSourcePackage;
         final String enabledState;
         final Drawable icon;
 
@@ -567,6 +671,7 @@ public class MainActivity extends Activity {
                 long installedVersion,
                 long lastUpdatedAt,
                 String installSource,
+                String installSourcePackage,
                 String enabledState,
                 Drawable icon) {
             this.label = label;
@@ -575,12 +680,13 @@ public class MainActivity extends Activity {
             this.installedVersion = installedVersion;
             this.lastUpdatedAt = lastUpdatedAt;
             this.installSource = installSource;
+            this.installSourcePackage = installSourcePackage;
             this.enabledState = enabledState;
             this.icon = icon;
         }
 
         String statusLine() {
-            return "Disabled · check Play or Galaxy Store";
+            return "Disabled · open store to check update";
         }
 
         String detailLine() {
@@ -603,6 +709,37 @@ public class MainActivity extends Activity {
             }
 
             return builder.toString();
+        }
+
+        boolean prefersGalaxyStore() {
+            return "com.sec.android.app.samsungapps".equals(installSourcePackage);
+        }
+
+        boolean matches(String query) {
+            if (TextUtils.isEmpty(query)) {
+                return true;
+            }
+
+            String searchable = (label + " "
+                    + packageName + " "
+                    + versionName + " "
+                    + enabledState + " "
+                    + (installSource == null ? "" : installSource)).toLowerCase(Locale.US);
+            return searchable.contains(query);
+        }
+    }
+
+    private static final class AppInstallSource {
+        final String displayLine;
+        final String packageName;
+
+        AppInstallSource(String displayLine, String packageName) {
+            this.displayLine = displayLine;
+            this.packageName = packageName;
+        }
+
+        static AppInstallSource unknown() {
+            return new AppInstallSource(null, null);
         }
     }
 
