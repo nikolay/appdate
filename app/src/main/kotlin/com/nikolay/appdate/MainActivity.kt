@@ -56,7 +56,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -200,12 +199,11 @@ private fun AppdateScreen() {
                 onQueryChange = { query = it },
                 totalCount = apps.size,
                 visibleCount = filteredApps.size,
-                isScanning = isScanning,
                 errorText = errorText
             )
 
             when {
-                isScanning && apps.isEmpty() -> LoadingState()
+                isScanning && apps.isEmpty() -> EmptyState("Scanning disabled apps...")
                 errorText != null && apps.isEmpty() -> EmptyState(errorText ?: "Package scan failed.")
                 filteredApps.isEmpty() -> EmptyState(
                     if (apps.isEmpty()) "No disabled apps found." else "No disabled apps match the filter."
@@ -228,7 +226,6 @@ private fun SearchAndSummary(
     onQueryChange: (String) -> Unit,
     totalCount: Int,
     visibleCount: Int,
-    isScanning: Boolean,
     errorText: String?
 ) {
     Column(
@@ -272,15 +269,6 @@ private fun SearchAndSummary(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-            if (isScanning) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp
-                )
-            }
-        }
-        if (isScanning) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
         if (errorText != null) {
             Text(
@@ -289,16 +277,6 @@ private fun SearchAndSummary(
                 color = MaterialTheme.colorScheme.error
             )
         }
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
     }
 }
 
