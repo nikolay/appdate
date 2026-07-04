@@ -1,0 +1,26 @@
+app/src/main/java/com/nikolay/appdate/MainActivity.java
+  s_69429d3eaa182d::t_8e0d3360e77a11 8,42,132-137,176-178,206,214,216,304-341,384,413,435-436,559,569,571,577,583,595-597
+README.md
+  s_69429d3eaa182d::t_41e4ac35e343c4 5,114-115
+app/src/main/res/values/strings.xml
+  s_69429d3eaa182d::t_78b3ce59b3e431 3-4
+site/index.html
+  s_69429d3eaa182d::t_4b7c2c26e925ae 6,28,31,33,43,53-54,73
+  s_69429d3eaa182d::t_08843fb0f4ffa8 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c900f13340365064d836e26b8611c63c902775f8",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
