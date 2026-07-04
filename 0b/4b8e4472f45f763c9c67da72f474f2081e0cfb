@@ -1,0 +1,19 @@
+app/src/main/kotlin/com/nikolay/appdate/MainActivity.kt
+  s_69429d3eaa182d::t_b3ffe11668736f 206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0b4b8e4472f45f763c9c67da72f474f2081e0cfb",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
