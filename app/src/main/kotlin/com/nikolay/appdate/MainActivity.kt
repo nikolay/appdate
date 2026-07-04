@@ -50,7 +50,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -66,6 +65,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -167,17 +167,10 @@ private fun AppdateScreen() {
                         onClick = { refreshToken += 1 },
                         enabled = !isScanning
                     ) {
-                        if (isScanning) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.Refresh,
-                                contentDescription = "Refresh"
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = "Refresh"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -202,19 +195,31 @@ private fun AppdateScreen() {
                 errorText = errorText
             )
 
-            when {
-                isScanning && apps.isEmpty() -> EmptyState("Scanning disabled apps...")
-                errorText != null && apps.isEmpty() -> EmptyState(errorText ?: "Package scan failed.")
-                filteredApps.isEmpty() -> EmptyState(
-                    if (apps.isEmpty()) "No disabled apps found." else "No disabled apps match the filter."
-                )
-                else -> DisabledAppList(
-                    apps = filteredApps,
-                    availability = availability,
-                    onOpenStore = { store, packageName -> context.openStore(store, packageName) },
-                    onOpenAppInfo = { packageName -> context.openAppInfo(packageName) },
-                    onUninstall = { packageName -> context.openUninstall(packageName) }
-                )
+            PullToRefreshBox(
+                isRefreshing = isScanning,
+                onRefresh = {
+                    if (!isScanning) {
+                        refreshToken += 1
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+                when {
+                    isScanning && apps.isEmpty() -> EmptyState("Scanning disabled apps...")
+                    errorText != null && apps.isEmpty() -> EmptyState(errorText ?: "Package scan failed.")
+                    filteredApps.isEmpty() -> EmptyState(
+                        if (apps.isEmpty()) "No disabled apps found." else "No disabled apps match the filter."
+                    )
+                    else -> DisabledAppList(
+                        apps = filteredApps,
+                        availability = availability,
+                        onOpenStore = { store, packageName -> context.openStore(store, packageName) },
+                        onOpenAppInfo = { packageName -> context.openAppInfo(packageName) },
+                        onUninstall = { packageName -> context.openUninstall(packageName) }
+                    )
+                }
             }
         }
     }
