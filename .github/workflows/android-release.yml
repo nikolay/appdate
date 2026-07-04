@@ -33,7 +33,7 @@ on:
           - halted
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -131,3 +131,40 @@ jobs:
 
       - name: Publish to Google Play
         run: ./gradlew :app:publishBundle
+
+      - name: Create GitHub release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          asset_name="appdate-${APPDATE_VERSION_NAME}-${PLAY_TRACK}.aab"
+          asset_path="${RUNNER_TEMP}/${asset_name}"
+          notes_path="${RUNNER_TEMP}/release-notes.md"
+
+          cp app/build/outputs/bundle/release/app-release.aab "$asset_path"
+
+          cat > "$notes_path" <<EOF
+          Appdate ${APPDATE_VERSION_NAME}
+
+          Google Play track: ${PLAY_TRACK}
+          Release status: ${PLAY_RELEASE_STATUS}
+          Version code: ${APPDATE_VERSION_CODE}
+
+          This release asset is the signed Android App Bundle uploaded to Google Play. Install testing builds from the Google Play testing opt-in link; Android devices cannot install an AAB file directly.
+          EOF
+
+          release_flags=()
+          if [[ "$PLAY_TRACK" != "production" ]]; then
+            release_flags+=(--prerelease)
+          fi
+
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "GitHub Release ${GITHUB_REF_NAME} already exists; leaving it unchanged."
+            exit 0
+          fi
+
+          gh release create "$GITHUB_REF_NAME" "$asset_path" \
+            --title "Appdate ${APPDATE_VERSION_NAME}" \
+            --notes-file "$notes_path" \
+            "${release_flags[@]}"

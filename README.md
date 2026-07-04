@@ -67,6 +67,8 @@ The `Android Release` workflow publishes tagged builds to Google Play. Push a Se
 
 The workflow also supports manual dispatch with an explicit track override.
 
+Tag-triggered workflow runs also create a GitHub Release and attach the signed Android App Bundle. The release asset is the Play upload bundle, not a directly installable phone package.
+
 Configure these GitHub repository secrets before publishing:
 
 ```text

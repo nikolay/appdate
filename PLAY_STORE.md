@@ -61,6 +61,8 @@ v1.2.3-alpha.1      -> alpha
 v1.2.3-internal.1   -> internal
 ```
 
+Successful tag-triggered workflow runs create a GitHub Release with the signed `.aab` attached. Install test builds through the Google Play opt-in link; Android phones cannot install `.aab` files directly.
+
 Add these GitHub repository secrets before pushing release tags:
 
 ```text
