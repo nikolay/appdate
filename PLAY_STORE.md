@@ -173,7 +173,7 @@ Find disabled apps and open safe update or uninstall flows.
 Full description draft:
 
 ```text
-Appdate helps you review disabled Android apps in one place. It lists disabled packages on your device, shows the store Android reports when available, and opens system-owned Play Store, Galaxy Store, app info, or uninstall screens.
+Appdate helps you review disabled Android apps in one place. It lists disabled packages on your device, shows the source Android reports when available, and opens Play Store, Galaxy Store, app info, or Android uninstall screens when a matching system-owned action exists.
 
 Appdate does not enable disabled apps automatically and does not silently update or uninstall apps. Android keeps those sensitive actions under user, store, or device-owner control.
 ```

@@ -2,7 +2,7 @@
 
 appdate contains Appdate, a local-first Android utility prototype for finding disabled apps and routing them to safe update or uninstall flows.
 
-Android does not allow an ordinary third-party app to silently update, uninstall, enable, or disable other apps. Appdate therefore keeps disabled apps disabled by never changing their enabled state. It detects disabled packages with public `PackageManager` APIs and opens system-owned Play Store, Galaxy Store, app-info, or Android uninstall screens for the user to complete.
+Android does not allow an ordinary third-party app to silently update, uninstall, enable, or disable other apps. Appdate therefore keeps disabled apps disabled by never changing their enabled state. It detects disabled packages with public `PackageManager` APIs and opens system-owned Play Store, Galaxy Store, app-info, or Android uninstall screens when Android reports a matching action.
 
 ## Project layout
 
@@ -111,6 +111,6 @@ python3 -m http.server 8080 --directory site
 ## Current limitations
 
 - Appdate cannot directly read Google Play or Galaxy Store pending-update queues for arbitrary packages through public Android APIs.
-- Store availability is checked locally before Appdate shows Play Store or Galaxy Store actions, then update availability is checked by the store after Appdate opens the package page.
+- Play Store and Galaxy Store actions are shown only when Android reports that store as the app's installer or update owner and the store is available on the device.
 - Silent update while disabled requires privileged/system, device-owner, root, or ADB-level authority. This prototype intentionally avoids pretending otherwise.
 - `QUERY_ALL_PACKAGES` is included because listing disabled packages requires broad package visibility on modern Android. That permission has Play Store policy implications and must be declared/justified in Play Console.

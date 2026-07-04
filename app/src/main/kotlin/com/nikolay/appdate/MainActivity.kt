@@ -4,6 +4,10 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.content.pm.ApplicationInfo
 import android.content.pm.InstallSourceInfo
 import android.content.pm.PackageInfo
@@ -17,6 +21,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +30,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,20 +37,17 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,7 +58,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -73,13 +73,17 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -91,6 +95,7 @@ import java.util.Locale
 
 private const val PLAY_PACKAGE = "com.android.vending"
 private const val GALAXY_PACKAGE = "com.sec.android.app.samsungapps"
+private const val FDROID_PACKAGE = "org.fdroid.fdroid"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -195,7 +200,6 @@ private fun AppdateScreen() {
                 onQueryChange = { query = it },
                 totalCount = apps.size,
                 visibleCount = filteredApps.size,
-                availability = availability,
                 isScanning = isScanning,
                 errorText = errorText
             )
@@ -224,7 +228,6 @@ private fun SearchAndSummary(
     onQueryChange: (String) -> Unit,
     totalCount: Int,
     visibleCount: Int,
-    availability: StoreAvailability,
     isScanning: Boolean,
     errorText: String?
 ) {
@@ -232,7 +235,7 @@ private fun SearchAndSummary(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedTextField(
             value = query,
@@ -259,58 +262,33 @@ private fun SearchAndSummary(
             shape = RoundedCornerShape(8.dp)
         )
 
-        ElevatedCard(
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            )
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = if (query.isBlank()) "$totalCount disabled apps" else "$visibleCount of $totalCount disabled apps",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+            Text(
+                text = if (query.isBlank()) "$totalCount disabled apps" else "$visibleCount of $totalCount disabled apps",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (isScanning) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
                 )
-                Text(
-                    text = "Update availability is checked by opening the owning store. Android does not expose a pending-update list for other apps.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                StoreAvailabilityLine(availability)
-                if (isScanning) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-                if (errorText != null) {
-                    Text(
-                        text = errorText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
         }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun StoreAvailabilityLine(availability: StoreAvailability) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        StatusPill(
-            label = if (availability.playStore) "Play Store available" else "Play Store unavailable",
-            tone = if (availability.playStore) PillTone.Positive else PillTone.Neutral
-        )
-        StatusPill(
-            label = if (availability.galaxyStore) "Galaxy Store available" else "Galaxy Store unavailable",
-            tone = if (availability.galaxyStore) PillTone.Positive else PillTone.Neutral
-        )
+        if (isScanning) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        if (errorText != null) {
+            Text(
+                text = errorText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
     }
 }
 
@@ -377,7 +355,7 @@ private fun DisabledAppCard(
     onOpenAppInfo: (String) -> Unit,
     onUninstall: (String) -> Unit
 ) {
-    val storeActions = app.storeActions(availability)
+    val storeAction = app.storeAction(availability)
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -394,7 +372,10 @@ private fun DisabledAppCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                InitialAvatar(app.label)
+                AppIcon(
+                    packageName = app.packageName,
+                    label = app.label
+                )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = app.label,
@@ -419,7 +400,7 @@ private fun DisabledAppCard(
             ) {
                 StatusPill(app.enabledState, PillTone.Neutral)
                 StatusPill("Update unknown", PillTone.Warning)
-                app.storeLabel?.let { StatusPill(it, PillTone.Positive) }
+                StatusPill(app.sourceChipLabel, app.sourceTone)
             }
 
             Text(
@@ -433,29 +414,31 @@ private fun DisabledAppCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (storeActions.isNotEmpty()) {
+                if (storeAction != null) {
                     StoreButton(
-                        store = storeActions.first(),
-                        onClick = { onOpenStore(storeActions.first(), app.packageName) },
+                        store = storeAction,
+                        onClick = { onOpenStore(storeAction, app.packageName) },
                         modifier = Modifier.weight(1.35f)
                     )
+                } else {
+                    Text(
+                        text = "No Play/Galaxy store",
+                        modifier = Modifier.weight(1.35f),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-                OutlinedButton(
+                IconButton(
                     onClick = { onOpenAppInfo(app.packageName) },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp)
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.IconSize)
-                    )
-                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                    Text(
-                        text = "App info",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        contentDescription = "App info for ${app.label}"
                     )
                 }
                 IconButton(
@@ -471,6 +454,27 @@ private fun DisabledAppCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AppIcon(packageName: String, label: String) {
+    val context = LocalContext.current
+    val iconSizePx = with(LocalDensity.current) { 44.dp.roundToPx() }
+    val icon by produceState<ImageBitmap?>(initialValue = null, packageName, iconSizePx) {
+        value = withContext(Dispatchers.IO) {
+            context.packageManager.appIconBitmap(packageName, iconSizePx)
+        }
+    }
+
+    if (icon != null) {
+        Image(
+            bitmap = icon!!,
+            contentDescription = null,
+            modifier = Modifier.size(44.dp)
+        )
+    } else {
+        InitialAvatar(label)
     }
 }
 
@@ -505,12 +509,6 @@ private fun StoreButton(
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(horizontal = 12.dp)
     ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
-            contentDescription = null,
-            modifier = Modifier.size(ButtonDefaults.IconSize)
-        )
-        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
         Text(
             text = store.buttonLabel,
             maxLines = 1,
@@ -721,10 +719,35 @@ private fun PackageManager.installSourceFor(packageName: String): AppInstallSour
 
 private fun friendlyStoreName(packageName: String): String {
     return when (packageName) {
-        PLAY_PACKAGE -> "Google Play"
+        PLAY_PACKAGE -> "Play Store"
         GALAXY_PACKAGE -> "Galaxy Store"
+        FDROID_PACKAGE -> "F-Droid"
+        "com.android.packageinstaller",
+        "com.google.android.packageinstaller",
+        "com.samsung.android.packageinstaller" -> "Package installer"
+        "com.sec.android.app.myfiles" -> "Samsung My Files"
         else -> packageName
     }
+}
+
+private fun PackageManager.appIconBitmap(packageName: String, sizePx: Int): ImageBitmap? {
+    return runCatching {
+        val appInfo = getApplicationInfoCompat(packageName, PackageManager.MATCH_DISABLED_COMPONENTS)
+            ?: return null
+        appInfo.loadIcon(this).toBitmap(sizePx).asImageBitmap()
+    }.getOrNull()
+}
+
+private fun Drawable.toBitmap(sizePx: Int): Bitmap {
+    if (this is BitmapDrawable && bitmap != null) {
+        return Bitmap.createScaledBitmap(bitmap, sizePx, sizePx, true)
+    }
+
+    val output = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(output)
+    setBounds(0, 0, sizePx, sizePx)
+    draw(canvas)
+    return output
 }
 
 @Suppress("DEPRECATION")
@@ -831,43 +854,34 @@ private data class DisabledApp(
     val installSourcePackage: String?,
     val enabledState: String
 ) {
-    val storeLabel: String?
+    val sourceChipLabel: String
+        get() = installSourcePackage?.let { "Source: ${friendlyStoreName(it)}" } ?: "Source unknown"
+
+    val sourceTone: PillTone
         get() = when (installSourcePackage) {
-            PLAY_PACKAGE -> "Google Play"
-            GALAXY_PACKAGE -> "Galaxy Store"
-            else -> null
+            PLAY_PACKAGE, GALAXY_PACKAGE -> PillTone.Positive
+            null -> PillTone.Neutral
+            else -> PillTone.Neutral
         }
 
     val detailLine: String
         get() {
             val details = mutableListOf(
-                "Installed $versionName ($versionCode)"
+                "Version $versionName ($versionCode)"
             )
-            if (!installSourceLabel.isNullOrBlank()) {
-                details += installSourceLabel
-            }
             if (lastUpdatedAt > 0L) {
                 details += "Updated ${DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(lastUpdatedAt))}"
             }
             return details.joinToString(" · ")
         }
 
-    fun storeActions(availability: StoreAvailability): List<StoreKind> {
+    fun storeAction(availability: StoreAvailability): StoreKind? {
         val preferred = when (installSourcePackage) {
             PLAY_PACKAGE -> StoreKind.Play
             GALAXY_PACKAGE -> StoreKind.Galaxy
             else -> null
         }
-        if (preferred != null && availability.isAvailable(preferred)) {
-            return listOf(preferred)
-        }
-        if (availability.playStore) {
-            return listOf(StoreKind.Play)
-        }
-        if (availability.galaxyStore) {
-            return listOf(StoreKind.Galaxy)
-        }
-        return emptyList()
+        return preferred?.takeIf { availability.isAvailable(it) }
     }
 
     fun matches(query: String): Boolean {
@@ -885,8 +899,8 @@ private data class DisabledApp(
 }
 
 private enum class StoreKind(val buttonLabel: String) {
-    Play("Open Play"),
-    Galaxy("Open Galaxy")
+    Play("Play Store"),
+    Galaxy("Galaxy Store")
 }
 
 private enum class PillTone {
