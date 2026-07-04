@@ -1,0 +1,19 @@
+app/src/main/java/com/nikolay/appdate/MainActivity.java
+  s_69429d3eaa182d::t_bcfae67428a1fb 17,19,24,46,48,144-169,205-206,209,211-216,219-248,269,277-278,369,379-381,384-386,392-394,397,399,474-475,477-481,483-493,495-501,503,508-518,520-523,528-531,536-540,542-546,549,553-557,562-564,571-573,576,578,586-587,620-625,663,674,683,689,713-743
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "43ff7fdbfd61dd17d3e07abf7d95a03d0f8ab0a7",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
