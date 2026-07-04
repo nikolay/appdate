@@ -1,0 +1,31 @@
+PLAY_STORE.md
+  s_69429d3eaa182d::t_d2a443dbf70e04 81-99
+  s_69429d3eaa182d::t_cdb609eed50a46 100-150
+  s_69429d3eaa182d::t_0238d720475c66 151
+.github/workflows/android-release.yml
+  s_69429d3eaa182d::t_cdb609eed50a46 56-75,77-80
+  s_69429d3eaa182d::t_d2a443dbf70e04 37,49-50,81-88
+  s_69429d3eaa182d::t_1c1599a611eab4 76
+app/build.gradle
+  s_69429d3eaa182d::t_d2a443dbf70e04 72
+.gitignore
+  s_69429d3eaa182d::t_d2a443dbf70e04 8
+README.md
+  s_69429d3eaa182d::t_d2a443dbf70e04 79-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f0ab61f8fc94a8a1894d0a1d14e881aaf244692d",
+  "prompts": {},
+  "sessions": {
+    "s_69429d3eaa182d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f209f-b405-7000-b177-87aa46b4c8ad",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Nikolay Kolev <nikolay@users.noreply.github.com>"
+    }
+  }
+}
