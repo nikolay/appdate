@@ -1,6 +1,3 @@
 <resources>
     <string name="app_name">Appdate</string>
-    <string name="home_subtitle">Disabled apps, store update checks, and uninstall actions in one quiet place.</string>
-    <string name="store_check_hint">Appdate finds disabled apps locally and opens Play Store, Galaxy Store, or Android settings so the store can show and perform available updates.</string>
-    <string name="empty_disabled_apps">No disabled apps found.</string>
 </resources>

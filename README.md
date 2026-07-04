@@ -2,13 +2,12 @@
 
 appdate contains Appdate, a local-first Android utility prototype for finding disabled apps and routing them to safe update or uninstall flows.
 
-Android does not allow an ordinary third-party app to silently update, uninstall, enable, or disable other apps. Appdate therefore keeps disabled apps disabled by never changing their enabled state. It detects disabled packages with public `PackageManager` APIs and opens system-owned Play Store, Galaxy Store, app-info, or uninstall screens for the user to complete.
+Android does not allow an ordinary third-party app to silently update, uninstall, enable, or disable other apps. Appdate therefore keeps disabled apps disabled by never changing their enabled state. It detects disabled packages with public `PackageManager` APIs and opens system-owned Play Store, Galaxy Store, app-info, or Android uninstall screens for the user to complete.
 
 ## Project layout
 
-- `app/` - native Android app source, written in Java with no external runtime dependencies.
-- `scripts/build-apk.sh` - offline-friendly APK builder using the installed Android SDK tools.
-- `scripts/manual/AndroidManifest.xml` - manifest used only by the manual APK builder because `aapt2` requires a `package` attribute.
+- `app/` - native Android app source, written in Kotlin with Jetpack Compose and Material 3.
+- `scripts/build-apk.sh` - Gradle-backed debug APK builder for local sideload testing.
 - `scripts/resolve-play-release.sh` - SemVer-to-Play-track resolver used by GitHub Actions.
 - `site/` - static GitHub Pages-ready website for `https://droidappdate.com`.
 
@@ -92,7 +91,7 @@ The workflow uses Google Cloud Workload Identity Federation, so no long-lived se
 
 The Android app and static site both follow the system light/dark setting.
 
-- Android uses night-qualified resources in `app/src/main/res/values-night/` and avoids hardcoded light-theme colors in the activity UI.
+- Android uses Material 3 dynamic color on supported devices, falls back to light/dark Material color schemes, and keeps package scanning off the UI thread.
 - The static site uses `color-scheme: light dark` and `prefers-color-scheme: dark` CSS token overrides.
 
 ## Run locally
@@ -112,6 +111,6 @@ python3 -m http.server 8080 --directory site
 ## Current limitations
 
 - Appdate cannot directly read Google Play or Galaxy Store pending-update queues for arbitrary packages through public Android APIs.
-- Store availability is checked in Play Store or Galaxy Store after Appdate opens the package’s store page.
+- Store availability is checked locally before Appdate shows Play Store or Galaxy Store actions, then update availability is checked by the store after Appdate opens the package page.
 - Silent update while disabled requires privileged/system, device-owner, root, or ADB-level authority. This prototype intentionally avoids pretending otherwise.
 - `QUERY_ALL_PACKAGES` is included because listing disabled packages requires broad package visibility on modern Android. That permission has Play Store policy implications and must be declared/justified in Play Console.
