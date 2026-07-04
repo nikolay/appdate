@@ -69,6 +69,7 @@ play {
     track.set(playTrackName)
     releaseStatus.set(playReleaseStatuses[playReleaseStatusName])
     defaultToAppBundles.set(true)
+    useApplicationDefaultCredentials = true
 }
 
 tasks.register("printPlayBundlePath") {

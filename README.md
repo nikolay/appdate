@@ -74,10 +74,18 @@ APPDATE_UPLOAD_KEYSTORE_BASE64
 APPDATE_RELEASE_STORE_PASSWORD
 APPDATE_RELEASE_KEY_ALIAS
 APPDATE_RELEASE_KEY_PASSWORD
-GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
 ```
 
-`APPDATE_UPLOAD_KEYSTORE_BASE64` should be the base64-encoded upload keystore file. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` should be the service-account JSON content authorized in Play Console.
+`APPDATE_UPLOAD_KEYSTORE_BASE64` should be the base64-encoded upload keystore file.
+
+Configure these GitHub repository variables before publishing:
+
+```text
+GCP_WORKLOAD_IDENTITY_PROVIDER
+GCP_SERVICE_ACCOUNT_EMAIL
+```
+
+The workflow uses Google Cloud Workload Identity Federation, so no long-lived service-account key JSON is stored in GitHub.
 
 ## Theme support
 

@@ -5,5 +5,6 @@ local.properties
 *.jks
 *.keystore
 *.idsig
+gha-creds-*.json
 site/downloads/*.apk
 site/downloads/*.aab
